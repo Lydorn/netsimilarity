@@ -1,0 +1,7 @@
+# Data
+runs*/
+exps*/
+
+# Python
+__pycache__/
+*.py[cod]

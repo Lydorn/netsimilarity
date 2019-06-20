@@ -1,0 +1,71 @@
+
+[NOTES]
+# To get the human readable version of an error code, use:
+#   pylint --list-msgs | grep <error-code>
+# To get a list of all pylint codes and messages:
+#   - Sorted by codes:    http://pylint-messages.wikidot.com/all-codes
+#   - Sorted by messages: http://pylint-messages.wikidot.com/all-messages
+# To get an example of a .pylintrc file, go to:
+#   https://github.com/PyCQA/pylint/blob/master/pylintrc
+# The comprehensive list of pylint error codes is here:
+#   https://docs.pylint.org/en/latest/technical_reference/features.html
+
+
+[MASTER]
+# Use multiple processes to speed up Pylint.
+jobs=4
+
+
+[MESSAGES CONTROL]
+# The comprehensive list of pylint error codes is in the subsections `Messages` of this link:
+#   https://docs.pylint.org/en/latest/technical_reference/features.html
+# Disable the message, report, category or checker with the given id(s). In the command line you
+#   can use `--disable=all` to disable everything first and then reenable specific checks. For
+#   example, use `--disable=all --enable=similarities` if you want to run only the similarities
+#   checker. If you want to run only the classes checker, but have no Warning level messages
+#   displayed, use `--disable=all --enable=classes --disable=W`
+disable=
+    missing-docstring,      # C0111: Missing %s docstring
+    ungrouped-imports,      # C0412: Used when imports are not grouped by packages
+
+
+[BASIC]
+# Basic Checker:
+#   https://docs.pylint.org/en/latest/technical_reference/features.html#basic-checker
+# List of builtins function names that should not be used, separated by a comma. In this case,
+#   map and filter should be replaced by list comprehensions.
+bad-functions=map,filter,input
+# Good variable names which should always be accepted, separated by a comma
+good-names=i,j,k,t,_,xs,ys,zs
+# Regular expression matching correct function names (max nb of characters increased to 42)
+function-rgx=[a-z_][a-z0-9_]{2,42}$
+# Naming hint for function names (max nb of characters increased to 42)
+function-name-hint=[a-z_][a-z0-9_]{2,42}$
+# Regular expression matching correct method names (max nb of characters increased to 42)
+method-rgx=[a-z_][a-z0-9_]{2,42}$
+# Naming hint for method names (max nb of characters increased to 42)
+method-name-hint=[a-z_][a-z0-9_]{2,42}$
+
+
+[DESIGN]
+# Design Checker:
+#   https://docs.pylint.org/en/latest/technical_reference/features.html#design-checker
+# The minimum number of public methods for a class because it sometimes makes sense for some
+#   abstract classes to only have a single method.
+min-public-methods=1
+
+
+[FORMAT]
+# Format Checker:
+#   https://docs.pylint.org/en/latest/technical_reference/features.html#format-checker
+# Maximum number of characters on a single line.
+max-line-length=99
+
+
+[TYPECHECK]
+# Typecheck Checker:
+#  https://docs.pylint.org/en/latest/technical_reference/features.html#typecheck-checker
+# List of module names for which member attributes should not be checked (this is useful for
+#   modules/projects where namespaces are manipulated during runtime and thus existing member
+#   attributes cannot be deduced by static analysis).
+ignored-modules=numpy.random,torch

@@ -1,0 +1,25 @@
+{
+  "data_dir_candidates": [
+    "~/netsimilarity/data",
+    "/workspace/data"
+    // try inside docker image]
+  ],
+  "data_root_partial_dirpath": "synthetic_dataset",
+  "data_processes_pool_size": 12,
+  "patch_size": 64,
+  "input_channel_count": 2,
+  "output_channel_count": 1,
+
+  "batch_size": 64,
+  "lr": 1e-4,
+  "weight_decay": 0,
+  "dropout_keep_prob": 1.0,  // Not used for now anyway
+  "max_epoch": 5000,
+  "train_log_step": 250,
+  "checkpoint_epoch": 100,
+  // outputs
+  "exps_dirpath": "exps",
+  "runs_dirpath": "runs",
+  "logs_dirname": "logs",
+  "checkpoints_dirname": "checkpoints"
+}
