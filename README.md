@@ -1,6 +1,14 @@
 # Net Similarity
 
-This is the code from the submitted paper "Input Similarity from the Neural Network Perspective".
+This is the official code for the paper:
+
+**Input Similarity from the Neural Network Perspective**\
+[Guillaume Charpiat](https://www.lri.fr/~gcharpia/),
+[Nicolas Girard](https://www-sop.inria.fr/members/Nicolas.Girard/),
+Loris Felardos,
+[Yuliya Tarabalka](https://www-sop.inria.fr/members/Yuliya.Tarabalka/)\
+NeurIPS 2019\
+**\[Final version of paper soon available\]**
 
 # Projects
 
