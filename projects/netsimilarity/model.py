@@ -27,7 +27,7 @@ class Simple1DInputNet(nn.Module):
         batched_x = sample["x"]
         yb = self.net(batched_x)
         y = yb[0, :]  # Remove batch dim
-        # Propagate values of yb seperatly
+        # Propagate values of yb separately
         d = 1
         all_dim_grads = []
         for i in range(d):
