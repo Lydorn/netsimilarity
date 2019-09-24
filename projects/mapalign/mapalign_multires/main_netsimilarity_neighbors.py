@@ -38,12 +38,15 @@ INDIVIDUAL_PATCH_INDEX_LIST_FILE_FORMAT = "{}.bin_index_list.npy"
 INDIVIDUAL_PATCH_TILE_CITY = "bloomington"
 INDIVIDUAL_PATCH_TILE_NUMBER = 22
 
+SIMILARITY_KERNEL_NORMALIZED = False  # Default: true
+SIMILARITY_KERNEL_SCALAR = False  # Default: true
+
 # --- --- #
 
 # --- Launch examples --- #
 
-# python main_netsimilarity_neighbors.py --run_name ds_fac_4_inria_bradbury_all   --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_0
-# python main_netsimilarity_neighbors.py --run_name ds_fac_4_inria_bradbury_all_1 --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_1
+# python main_netsimilarity_neighbors.py --data_dirpath /data/data --run_name ds_fac_4_inria_bradbury_all   --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_0
+# python main_netsimilarity_neighbors.py --data_dirpath /data/data --run_name ds_fac_4_inria_bradbury_all_1 --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_1
 # python main_netsimilarity_neighbors.py --run_name ds_fac_4_inria_bradbury_all_2 --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_2
 
 # python main_netsimilarity_neighbors.py --mode individual --ds_fac 4 --output_dirname netsimilarity_ds_fac_4_round_0
@@ -62,7 +65,7 @@ def get_args():
         choices=['compute', 'individual'],
         help='Mode to launch the script in:\n'
              '    - (compute) gradients for all patches and then compute neighbor count\n'
-             '    - (individual) compute all similarity measures for a few individual patches. See global params in the .py to change the selected individual patches.\n')
+             '    - (individual) compute all similarity measures for a few individual patches\n')
     argparser.add_argument(
         '--individual_selection',
         default="tile",
@@ -74,10 +77,14 @@ def get_args():
         type=str,
         help='Name of the config file, excluding the .json file extension.')
     argparser.add_argument(
+        '--data_dirpath',
+        type=str,
+        help='Path of directory where the data can be found and gradients will be saved and read from.')
+    argparser.add_argument(
         '--runs_dirpath',
         default=RUNS_DIRPATH,
         type=str,
-        help='Name of directory where the model run can be found.')
+        help='Path of directory where the model run can be found.')
     argparser.add_argument(
         '--run_name',
         type=str,
@@ -177,7 +184,15 @@ def individual(args, raw_dirpath, tile_info_list):
                 if tile_info["city"] == INDIVIDUAL_PATCH_TILE_CITY and tile_info["number"] == INDIVIDUAL_PATCH_TILE_NUMBER:
                     individual_patch_index_list.append(i)
                 i += 1
-    similarity_stats.compute_similarities_list(raw_dirpath, tile_info_list, individual_patch_index_list, args.output_dirname, OUTPUT_FILEPATH_FORMAT)
+
+    similarities_mat = similarity_stats.compute_similarities_list(raw_dirpath, tile_info_list,
+                                                                  individual_patch_index_list, args.output_dirname,
+                                                                  OUTPUT_FILEPATH_FORMAT,
+                                                                  normalized=SIMILARITY_KERNEL_NORMALIZED,
+                                                                  scalar=SIMILARITY_KERNEL_SCALAR)
+    similarity_stats.compute_denoising_factors_list(tile_info_list, individual_patch_index_list, args.output_dirname, OUTPUT_FILEPATH_FORMAT, similarities_mat=similarities_mat)
+    similarity_stats.compute_neighbor_consistency_list(raw_dirpath, tile_info_list, individual_patch_index_list, args.output_dirname, OUTPUT_FILEPATH_FORMAT, similarities_mat=similarities_mat)
+
 
 
 def main():
@@ -196,14 +211,17 @@ def main():
     overwrite_config["batch_size"] = 1
 
     # Find data_dir
-    data_dir = python_utils.choose_first_existing_path(overwrite_config["data_dir_candidates"])
-    if data_dir is None:
-        print("ERROR: Data directory not found!")
-        exit()
+    if args.data_dirpath is None:
+        data_dirpath = python_utils.choose_first_existing_path(overwrite_config["data_dir_candidates"])
+        if data_dirpath is None:
+            print("ERROR: Data directory not found!")
+            exit()
+        else:
+            print("Using data from {}".format(data_dirpath))
     else:
-        print("Using data from {}".format(data_dir))
+        data_dirpath = args.data_dirpath
 
-    raw_dirpath = os.path.join(data_dir, DATASET_NAME, "raw")
+    raw_dirpath = os.path.join(data_dirpath, DATASET_NAME, "raw")
 
     # Get all tiles
     tile_info_list_filepath = "{}.tile_info_list.npy".format(args.output_dirname)

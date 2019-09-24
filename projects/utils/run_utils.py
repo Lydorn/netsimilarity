@@ -569,7 +569,7 @@ def setup_run_dir(runs_dirpath, run_name=None, new_run=False, check_exists=False
             # Create another directory name for the run, excluding the existing names
             existing_run_names = [existing_run_dirname.split(" | ")[0] for existing_run_dirname in
                                   existing_run_dirnames]
-            name_timestamped = create_random_name_timestamped(exclude_list=existing_run_names)
+            name_timestamped = create_free_name_timestamped(exclude_list=existing_run_names)
         current_run_dirpath = os.path.join(runs_dirpath, name_timestamped)
         os.mkdir(current_run_dirpath)
     else:
@@ -605,14 +605,15 @@ def create_name_timestamped(name):
     return name_timestamped
 
 
-def create_random_name_timestamped(exclude_list=None):
+def create_free_name_timestamped(exclude_list=None):
     if exclude_list is not None:
         names = list(NAME_SET - set(exclude_list))
     else:
         names = list(NAME_SET)
     assert 0 < len(
-        names), "In create_random_name_timestamped(), all possible names have been used. Cannot create a new name without a collision!"
-    name = random.choice(names)
+        names), "In create_random_name_timestamped(), all possible names have been used. Cannot create a new name without a collision! Delete some runs to continue..."
+    sorted_names = sorted(names)
+    name = sorted_names[0]
     name_timestamped = create_name_timestamped(name)
     return name_timestamped
 

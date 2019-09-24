@@ -115,7 +115,7 @@ def compute_grads(raw_dirpath, runs_dirpath, run_name, ds_fac, overwrite_config,
 
                 # Grad compute
                 t = time.clock()
-                grads = map_align_model.compute_grads(sess, p_im, p_polygon_map)
+                grads, disp_pred = map_align_model.compute_grads(sess, p_im, p_polygon_map)
                 t_grads += time.clock() - t
 
                 # Saving
@@ -142,6 +142,11 @@ def compute_grads(raw_dirpath, runs_dirpath, run_name, ds_fac, overwrite_config,
                                                                b0=bbox[0], b1=bbox[1], b2=bbox[2], b3=bbox[3],
                                                                out_name="grads", ext="npy")
                 np.save(grads_filepath, flattened_grads)
+                disp_pred_filepath = output_filepath_format.format(dir=raw_dirpath, fold=tile_info["fold"],
+                                                                   out_dir=output_dirname, tile=tile_name,
+                                                                   b0=bbox[0], b1=bbox[1], b2=bbox[2], b3=bbox[3],
+                                                                   out_name="disp_pred", ext="npy")
+                np.save(disp_pred_filepath, disp_pred)
                 t_save += time.clock() - t
 
             pbar.update(len(tile_info["bbox_list"]))

@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 from tqdm import tqdm
 import multiprocessing as mp
+import itertools
 
 import python_utils
 
@@ -23,39 +24,45 @@ def compute_normalized_kernel_matrix(x, y):
     return normed_k
 
 
-def compute_similarity(x, y):
+def compute_similarity(x, y, normalized=True, scalar=True):
     assert x.shape == y.shape
     d = x.shape[-1]
-    normed_k = compute_normalized_kernel_matrix(x, y)
-    k = np.trace(normed_k) / d
-    return k
+    if normalized:
+        k_mat = compute_normalized_kernel_matrix(x, y)
+    else:
+        k_mat = compute_kernel_matrix(x, y)
+    if scalar:
+        k = np.trace(k_mat) / d
+        return k
+    else:
+        return k_mat
 
 
 def _compute_similarities_multidim_on_disk(params):
-    grads_filepath_list, source_grads_list = params
-    similarities_mat = np.empty((len(source_grads_list), len(grads_filepath_list)))
+    grads_filepath_list, source_grads_list, normalized, scalar = params
+    if scalar:
+        similarities_mat = np.empty((len(source_grads_list), len(grads_filepath_list)))
+    else:
+        d = source_grads_list[0].shape[1]
+        similarities_mat = np.empty((len(source_grads_list), len(grads_filepath_list), d, d))
     for j, grads_filepath in enumerate(grads_filepath_list):
         target_grads = np.load(grads_filepath)
         for i, source_grads in enumerate(source_grads_list):
-            similarity = compute_similarity(source_grads, target_grads)
+            similarity = compute_similarity(source_grads, target_grads, normalized=normalized, scalar=scalar)
             similarities_mat[i, j] = similarity
     return similarities_mat
 
 
-def compute_similarities_multidim_on_disk(grads_filepath_list, source_index_list):
+def compute_similarities_multidim_on_disk(grads_filepath_list, source_index_list, normalized=True, scalar=True):
     process_count = 4
     # Load grad from index_list
     source_grads_list = [np.load(grads_filepath_list[i]) for i in source_index_list]
-    grads_filepath_list_chuncks = python_utils.split_list_into_chunks(grads_filepath_list, min(10, len(
-        grads_filepath_list) // process_count))
-    params_list = [(grads_filepath_list_chunck, source_grads_list) for grads_filepath_list_chunck in
-                   grads_filepath_list_chuncks]
+    grads_filepath_list_chuncks = python_utils.split_list_into_chunks(grads_filepath_list, min(10, len(grads_filepath_list) // process_count))
+    params_list = [(grads_filepath_list_chunck, source_grads_list, normalized, scalar) for grads_filepath_list_chunck in grads_filepath_list_chuncks]
 
     with mp.Pool(process_count) as p:
-        similarities_mat_list = list(
-            tqdm(p.imap(_compute_similarities_multidim_on_disk, params_list), total=len(params_list),
-                 desc="Similarities: "))
-    similarities_mat = np.concatenate(similarities_mat_list, axis=-1)
+        similarities_mat_list = list(tqdm(p.imap(_compute_similarities_multidim_on_disk, params_list), total=len(params_list), desc="Similarities: "))
+    similarities_mat = np.concatenate(similarities_mat_list, axis=1)
 
     # for j, grads_filepath in enumerate(tqdm(grads_filepath_list, desc="Compute similarities: ")):
     #     target_grads = np.load(grads_filepath)
@@ -64,6 +71,40 @@ def compute_similarities_multidim_on_disk(grads_filepath_list, source_index_list
     #         similarities_mat[i, j] = similarity
 
     return similarities_mat
+
+
+def compute_denoising_factors(similarities_mat):
+    k = similarities_mat
+    k_t = np.transpose(k, axes=[0, 1, 3, 2])
+    sum_j_k_t = np.sum(k_t, axis=1, keepdims=True)
+    inv_sum_j_k_t = np.linalg.inv(sum_j_k_t)
+    a_j = k_t @ inv_sum_j_k_t
+
+    item = a_j @ np.transpose(a_j, axes=[0, 1, 3, 2])
+    s = np.sum(item, axis=1)
+    # denoising_factor_mats = np.stack([scipy.linalg.sqrtm(s_i) for s_i in s])
+    denoising_factor_mats = s
+    return denoising_factor_mats
+
+
+def compute_neighbor_consistency(disp_pred_mat, similarities_mat, source_index_list):
+    y_j = disp_pred_mat
+    y_i = disp_pred_mat[source_index_list]
+    k = similarities_mat
+    k_t = np.transpose(k, axes=[0, 1, 3, 2])
+
+    y_j_mult_k_t = y_j[:, np.newaxis, :] @ k_t
+    sum_j_y_j_mult_k_t = np.sum(y_j_mult_k_t, axis=1, keepdims=True)
+
+    sum_j_k_t = np.sum(k_t, axis=1, keepdims=True)
+    inv_sum_j_k_t = np.linalg.inv(sum_j_k_t)
+
+    e_k = sum_j_y_j_mult_k_t @ inv_sum_j_k_t
+    e_k = e_k.squeeze()
+
+    neighbor_consistency_vector = np.linalg.norm(y_i - e_k, axis=1)
+
+    return neighbor_consistency_vector
 
 
 def compute_similarity_1d(x, y):
@@ -219,6 +260,7 @@ def compute_soft_neighbor_count_multidim_on_disk(grads_filepath_list):
     normed_count_array /= d
     return normed_count_array
 
+
 # --- Multi-processes:
 #
 # def pbar_listener(q, total, desc):
@@ -270,3 +312,4 @@ def compute_soft_neighbor_count_multidim_on_disk(grads_filepath_list):
 #         normed_count_list.append(normed__count)
 #     normed_count_array = np.array(normed_count_list)
 #     return normed_count_array
+

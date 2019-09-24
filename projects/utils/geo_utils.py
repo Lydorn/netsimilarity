@@ -293,7 +293,7 @@ def save_shapefile_from_polygons(polygons, image_filepath, output_shapefile_file
 def indices_of_biggest_intersecting_polygon(polygon_list):
     """
     Assumes polygons which intersect follow each other on the order given by polygon_list.
-    This avoids the uge complexity of looking for an intesection between every polygon.
+    This avoids the huge complexity of looking for an intersection between every polygon.
 
     :param ori_gt_polygons:
     :return:

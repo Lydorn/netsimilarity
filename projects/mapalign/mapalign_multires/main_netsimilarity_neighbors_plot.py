@@ -33,6 +33,8 @@ INDIVIDUAL_PATCH_INDEX_LIST_FILE_FORMAT = "{}.bin_index_list.npy"
 INDIVIDUAL_PATCH_TILE_CITY = "bloomington"
 INDIVIDUAL_PATCH_TILE_NUMBER = 22
 
+HIST_BINS = 100  # Default 10
+HIST_Y_MAX = 0.1  # Default 0.8
 
 # --- --- #
 
@@ -41,9 +43,6 @@ INDIVIDUAL_PATCH_TILE_NUMBER = 22
 # python main_netsimilarity_neighbors_plot.py --output_dirname netsimilarity_ds_fac_4_round_0
 # python main_netsimilarity_neighbors_plot.py --output_dirname netsimilarity_ds_fac_4_round_1
 # python main_netsimilarity_neighbors_plot.py --output_dirname netsimilarity_ds_fac_4_round_2
-# python main_netsimilarity_neighbors_plot.py --mode individual --output_dirname netsimilarity_ds_fac_4_round_0
-# python main_netsimilarity_neighbors_plot.py --mode individual --output_dirname netsimilarity_ds_fac_4_round_1
-# python main_netsimilarity_neighbors_plot.py --mode individual --output_dirname netsimilarity_ds_fac_4_round_2
 
 # ---  --- #
 
@@ -56,19 +55,13 @@ def get_args():
         type=str,
         choices=['overall', 'individual'],
         help='Mode to launch the script in:\n'
-             '    - (overall) plot histogram of all neighbor soft counts. '
-             '      Saves patches representative of each similarity bin.\n'
+             '    - (overall) plot histogram of all neighbor soft counts\n'
              '    - (individual) plot k closest neighbors and hist of closest neighbors\n')
     argparser.add_argument(
         '--individual_selection',
         default="tile",
         type=str,
-        choices=['tile', 'index_list'],
-        help='When in individual mode, this argument changes the way the individual source patch is chosen. '
-             'tile: select a tile based on the global params INDIVIDUAL_PATCH_TILE_CITY and INDIVIDUAL_PATCH_TILE_NUMBER in the script.'
-             'index_list: select patch based on the INDIVIDUAL_PATCH_INDEX_LIST_FILE_FORMAT global param in the script. '
-             'By default it selects patches that where chosen to represent each bin in the histogram that are plotting by the overall mode. '
-             'Thus it requires to launch this script with mode overall first.')
+        choices=['tile', 'index_list'])
     argparser.add_argument(
         '-c', '--config',
         default=CONFIG,
@@ -273,7 +266,7 @@ def plot_k_nearest_hist(data, fig_name):
     f.set_tight_layout({"pad": .0})
     ax = f.gca()
 
-    hist, bin_edges = np.histogram(data["similarities"])
+    hist, bin_edges = np.histogram(data["similarities"], bins=HIST_BINS)
     freq = hist / np.sum(hist)
 
     im_display = draw_image_and_polygons(data["source_image"], data["source_polygons"])
@@ -282,12 +275,12 @@ def plot_k_nearest_hist(data, fig_name):
     # im = OffsetImage(im_display, zoom=zoom)
     # ab = AnnotationBbox(im, (0.0, 0.8), frameon=False, box_alignment=(0, 1), bboxprops=dict(alpha=0.5))
     # ax.add_artist(ab)
-    ax.imshow(im_display, zorder=0, extent=[0.0, 0.5, 0.3, 0.8])
+    ax.imshow(im_display, zorder=0, extent=[0.0, 0.5, HIST_Y_MAX - 0.5 * HIST_Y_MAX, HIST_Y_MAX])
 
     # Plot hist
     ax.bar(bin_edges[1:], freq, width=np.diff(bin_edges), align='center', alpha=0.8)
     ax.set_xlim([0, 1])
-    ax.set_ylim([0, 0.8])
+    ax.set_ylim([0, HIST_Y_MAX])
 
     ax.set_xlabel("Similarity")
     ax.set_ylabel("Frequency")
@@ -310,7 +303,7 @@ def plot_k_nearest_hist(data, fig_name):
     #         a1.text(x, y + 0.025, u'\u2191', fontname='STIXGeneral', size=30, va='center', ha='center', clip_on=True)
     #         a1.add_artist(ab)
     # a1.set_ylim([0, 1])
-    # # a1.autoscale()
+    ax.set_aspect(1/HIST_Y_MAX)
 
     plt.savefig(fig_name + ".eps", dpi=300)
     plt.show()

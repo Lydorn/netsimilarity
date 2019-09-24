@@ -9,8 +9,15 @@ import model_utils
 # import model_utils_concat_interm_outputs
 import loss_utils
 
+sys.path.append("../evaluate_funcs")  # Evaluation functions
+import evaluate_utils
+
+sys.path.append("../utils")  # Mapalign utils
+import visualization
+
 sys.path.append("../../utils")  # All project utils
 import python_utils
+import polygonization_utils
 import tf_utils
 import image_utils
 import print_utils
@@ -459,6 +466,20 @@ class MapAlignModel:
                 summaries_writer.add_run_metadata(run_metadata, 'step%03d' % summary_index)
             print_utils.print_info("step {}, training loss = {}".format(summary_index, train_loss))
 
+            if plot:
+                train_image_batch = (train_image_batch - self.image_dynamic_range[0]) / (
+                        self.image_dynamic_range[1] - self.image_dynamic_range[0])
+                # train_gt_disp_field_map_batch = train_gt_disp_field_map_batch * 2  # Within [-1, 1]
+                # train_gt_disp_field_map_batch = train_gt_disp_field_map_batch * self.disp_max_abs_value  # Within [-disp_max_abs_value, disp_max_abs_value]
+                # train_pred_disp_field_map_batch = train_pred_disp_field_map_batch * 2  # Within [-1, 1]
+                # train_pred_disp_field_map_batch = train_pred_disp_field_map_batch * self.disp_max_abs_value  # Within [-disp_max_abs_value, disp_max_abs_value]
+                # visualization.plot_batch(["Training gt disp", "Training pred disp"], train_image_batch,
+                #                          train_gt_polygon_map_batch,
+                #                          [train_gt_disp_field_map_batch, train_pred_disp_field_map_batch],
+                #                          train_disp_polygon_map_batch)
+                if self.add_seg_output:
+                    visualization.plot_batch_seg("Training pred seg", train_image_batch, train_pred_seg_batch)
+
             return train_image_batch, train_gt_polygon_map_batch, train_gt_disp_field_map_batch, train_disp_polygon_map_batch, train_pred_disp_field_map_batch, train_pred_seg_batch
         else:
             _ = sess.run([self.train_step], feed_dict=feed_dict)
@@ -503,6 +524,14 @@ class MapAlignModel:
         if self.add_seg_output:
             index = -extra_output_count + self.add_disp_output
             val_pred_seg_batch = output_list[index]
+
+        if plot:
+            val_image_batch = (val_image_batch - self.image_dynamic_range[0]) / (
+                    self.image_dynamic_range[1] - self.image_dynamic_range[0])
+            # visualization.plot_batch_polygons("Validation plot", val_image_batch, val_gt_polygons_batch,
+            #                                   val_disp_polygons_batch, val_aligned_disp_polygons_batch)
+            if self.add_seg_output:
+                visualization.plot_batch_seg("Validation pred seg", val_image_batch, val_pred_seg_batch)
 
         summaries_writer.add_summary(val_summary, summary_index)
         print_utils.print_info("step {}, validation loss = {}".format(summary_index, val_loss))
@@ -596,6 +625,11 @@ class MapAlignModel:
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
 
+            if plot_results:
+                visualization.init_figures(["Training gt disp", "Training pred disp", "Training pred seg",
+                                            "Training polygonization",
+                                            "Validation plot", "Validation pred seg"])
+
             print("Model has {} trainable variables".format(
                 tf_utils.count_number_trainable_params())
             )
@@ -683,6 +717,7 @@ class MapAlignModel:
         complete_segmentation_image = np.zeros(
             (spatial_shape[0] - 2 * padding, spatial_shape[1] - 2 * padding, self.seg_channel_count))
 
+        # visualization.init_figures(["example"])
 
         # Iterate over every patch and predict displacement field for this patch
         patch_boundingboxes = image_utils.compute_patch_boundingboxes(spatial_shape,
@@ -741,6 +776,23 @@ class MapAlignModel:
                 for batch_index, boundingbox in enumerate(batch_boundingboxes):
                     patch_pred_disp_field_map = batch_pred_disp_field_map[batch_index]
                     patch_pred_seg = batch_pred_seg[batch_index]
+                    # print("--- patch_pred_seg: ---")
+                    # print(patch_pred_seg[:, :, 0])
+                    # print("---")
+                    # print(patch_pred_seg[:, :, 1])
+                    # print("---")
+                    # print(patch_pred_seg[:, :, 2])
+                    # print("---")
+                    # print(patch_pred_seg[:, :, 3])
+                    # print("---")
+
+                    # # visualization.init_figures(["example", "example 2"])
+                    # visualization.init_figures(["example"])
+                    # patch_image = image_array[boundingbox[0]:boundingbox[2],
+                    #               boundingbox[1]:boundingbox[3], :]
+                    # patch_image = (patch_image - self.image_dynamic_range[0]) / (
+                    #         self.image_dynamic_range[1] - self.image_dynamic_range[0])
+                    # visualization.plot_seg("example", patch_image, patch_pred_seg)
 
                     padded_boundingbox = image_utils.padded_boundingbox(boundingbox, padding)
                     translated_padded_boundingbox = [x - padding for x in padded_boundingbox]
@@ -751,6 +803,17 @@ class MapAlignModel:
                     translated_padded_boundingbox[0]:translated_padded_boundingbox[2],
                     translated_padded_boundingbox[1]:translated_padded_boundingbox[3],
                     :] = patch_pred_seg
+
+                    # visualization.plot_seg("example 2", patch_image, complete_segmentation_image[
+                    # translated_padded_boundingbox[0]:translated_padded_boundingbox[2],
+                    # translated_padded_boundingbox[1]:translated_padded_boundingbox[3],
+                    # :])
+
+            # visualization.plot_example("example",
+            #                            patch_image[0],
+            #                            patch_ori_gt[0],
+            #                            patch_pred_disp_field_map[0],
+            #                            patch_ori_gt[0])
 
             coord.request_stop()
             coord.join(threads)
@@ -866,13 +929,13 @@ class MapAlignModel:
             self.input_disp_polygon_map: batch_polygon_map,
             self.keep_prob: 1.0
         }
-        patch_grads_x, patch_grads_y = sess.run([self.grad_x_op, self.grad_y_op], feed_dict=feed_dict)
+        patch_level_0_disp_pred, patch_grads_x, patch_grads_y = sess.run([self.level_0_disp_pred, self.grad_x_op, self.grad_y_op], feed_dict=feed_dict)
 
         grads = {
             "x": patch_grads_x,
             "y": patch_grads_y,
         }
-        return grads
+        return grads, patch_level_0_disp_pred[0]
 
     @staticmethod
     def get_output_res(input_res, pool_count):
