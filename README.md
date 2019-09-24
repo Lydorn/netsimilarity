@@ -28,9 +28,11 @@ The code for the experiment about forcing similarities between pairs of training
 
 ## Compute gradients
 
-To analyze the input similarity of any network, the first step is to compute all gradients of some input. This is specific to the deep learning framework you use. We used Tensorflow for the Map alignment problem and PyTorch for the toy problem so you can see how it is done for both.
+To analyze the input similarity of any network, the first step is to compute all gradients of some input. This is specific to the deep learning framework you use. We used Tensorflow for the map alignment problem and PyTorch for the toy problem so you can see how it is done for both.
+
 For Tensorflow, see [projects/mapalign/mapalign_multires/model.py](projects/mapalign/mapalign_multires/model.py) in the ```compute_grads()``` method of the MapAlignModel class. This one is a bit more complex as the outout is 2D (displacement vector) so gradients are computed twice: for x and for y.
-For PyTorch see [projects/netsimilarity/model.py](projects/netsimilarity/model.py) in the ```compute_grads()``` method of the MapAlignModel class. Here the output is 1D so gradients are computed once but the code can be adapted to more dimensions by changing the values of the ```d``` variable inside the method. 
+
+For PyTorch see [projects/netsimilarity/model.py](projects/netsimilarity/model.py) in the ```compute_grads()``` method of the Simple1DInputNet class. Here the output is 1D so gradients are computed once but the code can be adapted to more dimensions by changing the value of the ```d``` variable inside the method. 
 
 ## Compute similarity measures
 
