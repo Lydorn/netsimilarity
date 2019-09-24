@@ -35,3 +35,15 @@ The Docker image with PyTorch and other dependencies for the toy problem can be 
 ### Map alignment problem
 
 The Docker image with Tensorflow and other dependencies for the map alignment problem can be built with the instructions in the folder [docker/tensorflow-mapalign](docker/tensorflow-mapalign).
+
+### If you use this code for your own research, please cite:
+
+```
+@InProceedings{Charpiat_2019_NeurIPS,
+author = {Charpiat, Guillaume and Girard, Nicolas and Felardos, Loris and Tarabalka, Yuliya},
+title = {Input Similarity from the Neural Network Perspective},
+booktitle = {Conference on Neural Information Processing Systems (NeurIPS)},
+month = {December},
+year = {2019}
+}
+```
