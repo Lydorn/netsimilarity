@@ -27,14 +27,20 @@ def get_args():
         '--x_name',
         default="frequency",
         type=str,
-        help='Name of the value to plot on x axis. Examples: sample_count or frequency.',
+        help='Name of the value to plot on x axis. Examples: capacity, sample_count or frequency.',
     )
     argparser.add_argument(
         '--y_name',
         type=str,
-        help='Name of the value to plot on y axis (if 3D plot). Examples: sample_count or frequency.',
+        help='Name of the value to plot on y axis (if 3D plot). Examples: capacity, sample_count or frequency.',
     )
 
+    argparser.add_argument(
+        '-c', '--capacity',
+        default=[None],
+        type=int,
+        nargs='+',
+        help='Capacity of the model. Actually represents the number of perceptions per hidden layer.')
     argparser.add_argument(
         '-n', '--sample_count',
         default=[2048],
@@ -43,7 +49,7 @@ def get_args():
         help='Total number of samples to generate. Is a list of values, one for each experiment.')
     argparser.add_argument(
         '-f', '--frequency',
-        default=[1, 2, 4, 8],
+        default=[1, 2, 4, 8, 16],
         type=float,
         nargs='+',
         help='Frequency used for the sine wave. Is a list of values, one for each experiment.')
@@ -71,6 +77,7 @@ def get_args():
 
 def get_exp_params(all_param):
     exp_params = {
+        # "c": all_param["capacity"],
         "n": all_param["sample_count"],
         "f": all_param["frequency"],
         "s": all_param["noise_std"],
@@ -97,6 +104,7 @@ def main():
     exp_dirpath = args.exp_dirpath
 
     params = {
+        "capacity": args.capacity,
         "sample_count": args.sample_count,
         "frequency": args.frequency,
         "noise_std": args.noise_std,
@@ -143,18 +151,23 @@ def main():
     z_dict = {}
     for aggregated_name in aggregated_names:
         z_dict[aggregated_name] = []
-    for n, f in itertools.product(params["sample_count"], params["frequency"]):
-        if args.x_name == "sample_count":
+    for c, n, f in itertools.product(params["capacity"], params["sample_count"], params["frequency"]):
+        if args.x_name == "capacity":
+            x_list.append(c)
+        elif args.x_name == "sample_count":
             x_list.append(n)
         elif args.x_name == "frequency":
             x_list.append(f)
 
-        if args.y_name == "sample_count":
+        if args.y_name == "capacity":
+            y_list.append(c)
+        elif args.y_name == "sample_count":
             y_list.append(n)
         elif args.y_name == "frequency":
             y_list.append(f)
 
         all_params = {
+            # "capacity": c,
             "sample_count": n,
             "frequency": f,
             "noise_std": params["noise_std"],
@@ -201,17 +214,18 @@ def main():
     # Put a legend to the right of the current axis
     ax.legend(aggregated_names, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=15)
 
-    ax.set_title("Avg of all measures across all samples")
+    ax.set_title("Avg of all measures across all samples", fontsize=15)
     if len(y_list):
         ax.set_xlabel(args.x_name)
         ax.set_ylabel(args.x_name)
         ax.set_zlabel("Neighbor counts")
     else:
-        ax.set_xlabel(args.x_name.title())
         if args.log:
-            ax.set_ylabel("Neighbor count (log)")
+            ax.set_xlabel(args.x_name.title() + " (log)", fontsize=15)
+            ax.set_ylabel("Neighbor count (log)", fontsize=15)
         else:
-            ax.set_ylabel("Neighbor count")
+            ax.set_xlabel(args.x_name.title(), fontsize=15)
+            ax.set_ylabel("Neighbor count", fontsize=15)
     plt.savefig('{}.eps'.format("avg_of_all_measures"))
     plt.show()
 
