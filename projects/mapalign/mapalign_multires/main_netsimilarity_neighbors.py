@@ -87,14 +87,17 @@ def get_args():
         help='Path of directory where the model run can be found.')
     argparser.add_argument(
         '--run_name',
+        required=True,
         type=str,
         help='Name of run.')
     argparser.add_argument(
         '-d', '--ds_fac',
+        required=True,
         type=int,
         help='Downscaling factor. Should be an integer and it is used to retrieve the run name.')
     argparser.add_argument(
         '--output_dirname',
+        required=True,
         type=str,
         help='Name of the output directory.')
 
