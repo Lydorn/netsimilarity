@@ -40,7 +40,7 @@ def get_args():
         default=[None],
         type=int,
         nargs='+',
-        help='Capacity of the model. Actually represents the number of perceptions per hidden layer.')
+        help='Capacity of the model. Actually represents the number of perceptrons per hidden layer.')
     argparser.add_argument(
         '-n', '--sample_count',
         default=[2048],
