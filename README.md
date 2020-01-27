@@ -8,7 +8,7 @@ This is the official code for the paper:
 Loris Felardos,
 [Yuliya Tarabalka](https://www-sop.inria.fr/members/Yuliya.Tarabalka/)\
 NeurIPS 2019\
-**\[Final version of paper soon available\]**
+**\[[paper](https://www-sop.inria.fr/members/Nicolas.Girard/pdf/Charpiat_2019_NeurIPS_paper.pdf), [supplementary materials](https://www-sop.inria.fr/members/Nicolas.Girard/pdf/Charpiat_2019_NeurIPS_suppmat.pdf)\]**
 
 # Projects
 
