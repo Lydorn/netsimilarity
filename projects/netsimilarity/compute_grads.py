@@ -53,7 +53,7 @@ def compute_grads(config, run_params, dataset_params, split_name):
                             )
     dl = DataLoader(ds, batch_size=1)
 
-    model = Simple1DInputNet(config, run_params["capacity"])
+    model = Simple1DInputNet(config)
     model.to(dev)
 
     analyzer = Analyzer(config, model, run_dirpath)
